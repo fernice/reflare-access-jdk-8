@@ -4,7 +4,11 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.fernice</groupId>
+    <parent>
+        <groupId>org.fernice</groupId>
+        <artifactId>fernice-maven</artifactId>
+        <version>1.0</version>
+    </parent>
     <artifactId>fernice-reflare-access-jdk-8</artifactId>
     <version>1.0-SNAPSHOT</version>
 
@@ -15,7 +19,6 @@
         <connection>scm:git:ssh://git@github.com:fernice/reflare-access-jdk-8.git</connection>
         <developerConnection>scm:git:ssh://git@github.com:fernice/reflare-access-jdk-8.git</developerConnection>
         <url>https://github.com/fernice/reflare-access-jdk-8</url>
-        <tag>HEAD</tag>
     </scm>
 
     <properties>
