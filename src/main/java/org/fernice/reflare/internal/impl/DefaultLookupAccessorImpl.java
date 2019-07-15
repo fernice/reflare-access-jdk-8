@@ -5,7 +5,6 @@ import javax.swing.plaf.ComponentUI;
 import org.fernice.reflare.internal.DefaultLookup;
 import org.fernice.reflare.internal.DefaultLookupDelegate;
 import org.fernice.reflare.internal.DefaultLookupHelper.DefaultLookupAccessor;
-import org.fernice.reflare.internal.DefaultLookupHelper.DefaultLookupAccessor;
 
 public class DefaultLookupAccessorImpl implements DefaultLookupAccessor {
 
