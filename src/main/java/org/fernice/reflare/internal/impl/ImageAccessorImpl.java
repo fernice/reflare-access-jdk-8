@@ -22,18 +22,22 @@ public class ImageAccessorImpl implements ImageAccessor {
 
     @Override
     public Image getMultiResolutionImageResource(String resource) throws IOException {
-        Image image = ImageIO.read(ImageAccessorImpl.class.getResourceAsStream(resource));
+        Image image;
+
+        try (InputStream inputStream = ImageAccessorImpl.class.getResourceAsStream(resource)) {
+            image = ImageIO.read(inputStream);
+        }
 
         String resource2x = resource.substring(0, resource.lastIndexOf('.')) + "@2x" + resource.substring(resource.lastIndexOf("."));
 
-        InputStream input2x = ImageAccessorImpl.class.getResourceAsStream(resource2x);
+        try (InputStream input2x = ImageAccessorImpl.class.getResourceAsStream(resource2x)) {
+            if (input2x != null) {
+                Image image2x = ImageIO.read(input2x);
 
-        if (input2x != null) {
-            Image image2x = ImageIO.read(input2x);
-
-            return SunToolkit.createImageWithResolutionVariant(image, image2x);
-        } else {
-            return image;
+                return SunToolkit.createImageWithResolutionVariant(image, image2x);
+            } else {
+                return image;
+            }
         }
     }
 
