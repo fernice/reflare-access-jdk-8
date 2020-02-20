@@ -8,7 +8,7 @@
         <version>1.0.23</version>
     </parent>
     <artifactId>fernice-reflare-access-jdk-8</artifactId>
-    <version>1.0.24-SNAPSHOT</version>
+    <version>1.0.23</version>
 
     <name>reflare Access JDK 8</name>
     <description>Helper Implementation for JDK 8</description>
