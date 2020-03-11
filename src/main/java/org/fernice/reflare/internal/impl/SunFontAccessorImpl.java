@@ -242,4 +242,15 @@ public class SunFontAccessorImpl implements SunFontAccessor {
             return "Font[family=" + font.getFamily() + " name=" + font.getName() + " style=" + font2D.getStyle() + " weight=" + font2D.getWeight() + "]";
         }
     }
+
+    @Override
+    public int getFontWeight(@NotNull Font font) {
+        return FontAccess.getFontAccess().getFont2D(font).getWeight();
+    }
+
+    @Override
+    public boolean isFontItalic(@NotNull Font font) {
+        int style = FontAccess.getFontAccess().getFont2D(font).getStyle();
+        return style == 2 || style == 3;
+    }
 }
