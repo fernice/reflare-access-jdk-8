@@ -8,8 +8,10 @@ package org.fernice.reflare.internal.impl;
 
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -41,7 +43,7 @@ public class SunFontAccessorImpl implements SunFontAccessor {
     private static final AtomicBoolean initialized = new AtomicBoolean();
     private static final CountDownLatch initializationLatch = new CountDownLatch(1);
 
-    private static volatile Map<String, Set<FontPeer>> fontFamilies = new HashMap<>();
+    private static volatile Map<String, List<FontPeer>> fontFamilies = new HashMap<>();
 
     private static final Set<Font> fontExtensions = new HashSet<>();
     private static final Set<Font> fontExtensionOverrides = new HashSet<>();
@@ -53,7 +55,7 @@ public class SunFontAccessorImpl implements SunFontAccessor {
             return null;
         }
 
-        Set<FontPeer> fontFamily = fontFamilies.get(family.toLowerCase());
+        List<FontPeer> fontFamily = fontFamilies.get(family.toLowerCase());
 
         if (fontFamily != null && !fontFamily.isEmpty()) {
             int weightDistance = Integer.MAX_VALUE;
@@ -130,7 +132,7 @@ public class SunFontAccessorImpl implements SunFontAccessor {
     private boolean recomputeFontFamilies(@Nullable Font target) {
         boolean targetResult;
 
-        Map<String, Set<FontPeer>> fontFamilies = new HashMap<>();
+        Map<String, List<FontPeer>> fontFamilies = new HashMap<>();
 
         Font[] fonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
         targetResult = mergeFontFamilies(fontFamilies, fonts, MERGING_STRATEGY_COMBINE, target);
@@ -146,13 +148,13 @@ public class SunFontAccessorImpl implements SunFontAccessor {
         return targetResult;
     }
 
-    private boolean mergeFontFamilies(@NotNull Map<String, Set<FontPeer>> fontFamilies, @NotNull Font[] fonts, int mergingStrategy, @Nullable Font target) {
+    private boolean mergeFontFamilies(@NotNull Map<String, List<FontPeer>> fontFamilies, @NotNull Font[] fonts, int mergingStrategy, @Nullable Font target) {
         boolean targetResult = false;
 
         for (Font font : fonts) {
             String familyName = font.getFamily().toLowerCase();
 
-            Set<FontPeer> fontFamily = fontFamilies.computeIfAbsent(familyName, (s) -> new HashSet<>());
+            List<FontPeer> fontFamily = fontFamilies.computeIfAbsent(familyName, (s) -> new ArrayList<>());
             targetResult |= mergeFontFamily(fontFamily, font, mergingStrategy) && font == target;
 
             for (String weightName : WEIGHT_NAMES) {
@@ -161,7 +163,7 @@ public class SunFontAccessorImpl implements SunFontAccessor {
                 if (index >= 0) {
                     String strippedFamilyName = familyName.substring(0, index).trim();
 
-                    Set<FontPeer> additionalFontFamily = fontFamilies.computeIfAbsent(strippedFamilyName, (s) -> new HashSet<>());
+                    List<FontPeer> additionalFontFamily = fontFamilies.computeIfAbsent(strippedFamilyName, (s) -> new ArrayList<>());
                     targetResult |= mergeFontFamily(additionalFontFamily, font, mergingStrategy) && font == target;
                 }
             }
@@ -170,35 +172,40 @@ public class SunFontAccessorImpl implements SunFontAccessor {
         return targetResult;
     }
 
-    private boolean mergeFontFamily(@NotNull Set<FontPeer> fonts, @NotNull Font font, int mergingStrategy) {
+    private boolean mergeFontFamily(@NotNull List<FontPeer> fonts, @NotNull Font font, int mergingStrategy) {
         FontAccess fontAccess = FontAccess.getFontAccess();
         Font2D font2D = fontAccess.getFont2D(font);
 
         int fontWeight = font2D.getWeight();
         boolean fontItalic = font2D.getStyle() == 2 || font2D.getStyle() == 3;
 
-        FontPeer matchingFont = null;
-        for (FontPeer candidateFont : fonts) {
-            Font2D candidateFont2D = candidateFont.font2D;
+        while (true) {
+            FontPeer matchingFont = null;
+            for (FontPeer candidateFont : fonts) {
+                Font2D candidateFont2D = candidateFont.font2D;
 
-            int candidateFontWeight = candidateFont2D.getWeight();
-            boolean candidateFontItalic = candidateFont2D.getStyle() == 2 || candidateFont2D.getStyle() == 3;
+                int candidateFontWeight = candidateFont2D.getWeight();
+                boolean candidateFontItalic = candidateFont2D.getStyle() == 2 || candidateFont2D.getStyle() == 3;
 
-            if (candidateFontWeight == fontWeight && candidateFontItalic == fontItalic) {
-                matchingFont = candidateFont;
-                break;
+                if (candidateFontWeight == fontWeight && candidateFontItalic == fontItalic) {
+                    matchingFont = candidateFont;
+                    break;
+                }
             }
+
+            if (matchingFont != null) {
+                if (mergingStrategy == MERGING_STRATEGY_KEEP) {
+                    return false;
+                }
+
+                if (mergingStrategy == MERGING_STRATEGY_OVERRIDE) {
+                    fonts.remove(matchingFont);
+                    continue;
+                }
+            }
+            break;
         }
 
-        if (matchingFont != null) {
-            if (mergingStrategy == MERGING_STRATEGY_KEEP) {
-                return false;
-            }
-
-            if (mergingStrategy == MERGING_STRATEGY_OVERRIDE) {
-                fonts.remove(matchingFont);
-            }
-        }
         fonts.add(new FontPeer(font, font2D));
 
         return true;
@@ -214,25 +221,6 @@ public class SunFontAccessorImpl implements SunFontAccessor {
         private FontPeer(@NotNull Font font, @NotNull Font2D font2D) {
             this.font = font;
             this.font2D = font2D;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == this) {
-                return true;
-            }
-            if (obj == null || obj.getClass() != FontPeer.class) {
-                return false;
-            }
-            FontPeer other = (FontPeer) obj;
-
-            return other.font.getFamily().equalsIgnoreCase(font.getFamily()) && other.font2D.getStyle() == font2D.getStyle() &&
-                    other.font2D.getWeight() == font2D.getWeight();
-        }
-
-        @Override
-        public int hashCode() {
-            return super.hashCode();
         }
 
         @NotNull
