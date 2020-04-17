@@ -25,14 +25,14 @@ import sun.font.FontAccess;
 public class SunFontAccessorImpl implements SunFontAccessor {
 
     private static final String[] WEIGHT_NAMES = { //
-            "light", "ultralight", "ultra light", "ultra-light", //
-            "extralight", "extra light", "extra-light", //
+            "thin", "light", "ultralight", "ultra light", "ultra-light", //
+            "extralight", "extlt", "extra light", "extra-light", //
             "demilight", "demi light", "demi-light", //
-            "normal", "regular", "medium", //
-            "bold", "heavy", "black", //
-            "semibold", "semi bold", "semi-bold", //
-            "demibold", "demi bold", "demi-bold", //
-            "extrabold", "extra bold", "extra-bold", //
+            "normal", "regular", "medium", "med", //
+            "bold", "heavy", "black", "blk", //
+            "semibold", "sembd", "semi bold", "semi-bold", //
+            "demibold", "demi", "demi bold", "demi-bold", //
+            "extrabold", "extbd", "extra bold", "extra-bold", //
             "ultrabold", "ultra bold", "ultra-bold", //
     };
 
