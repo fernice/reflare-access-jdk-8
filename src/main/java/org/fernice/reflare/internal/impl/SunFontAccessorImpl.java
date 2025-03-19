@@ -6,21 +6,18 @@
 
 package org.fernice.reflare.internal.impl;
 
-import java.awt.Font;
-import java.awt.GraphicsEnvironment;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.fernice.reflare.internal.SunFontHelper.SunFontAccessor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import sun.font.CompositeFont;
 import sun.font.Font2D;
 import sun.font.FontAccess;
+
+import java.awt.*;
+import java.util.*;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SunFontAccessorImpl implements SunFontAccessor {
 
@@ -68,7 +65,7 @@ public class SunFontAccessorImpl implements SunFontAccessor {
                     continue;
                 }
 
-                int distance = Math.abs(weight - font.font2D.getWeight());
+                int distance = Math.abs(weight - getFontWeight(font.font2D));
 
                 if (distance < weightDistance) {
                     weightDistance = distance;
@@ -176,7 +173,7 @@ public class SunFontAccessorImpl implements SunFontAccessor {
         FontAccess fontAccess = FontAccess.getFontAccess();
         Font2D font2D = fontAccess.getFont2D(font);
 
-        int fontWeight = font2D.getWeight();
+        int fontWeight = getFontWeight(font2D);
         boolean fontItalic = font2D.getStyle() == 2 || font2D.getStyle() == 3;
 
         while (true) {
@@ -184,7 +181,7 @@ public class SunFontAccessorImpl implements SunFontAccessor {
             for (FontPeer candidateFont : fonts) {
                 Font2D candidateFont2D = candidateFont.font2D;
 
-                int candidateFontWeight = candidateFont2D.getWeight();
+                int candidateFontWeight = getFontWeight(candidateFont2D);
                 boolean candidateFontItalic = candidateFont2D.getStyle() == 2 || candidateFont2D.getStyle() == 3;
 
                 if (candidateFontWeight == fontWeight && candidateFontItalic == fontItalic) {
@@ -227,18 +224,32 @@ public class SunFontAccessorImpl implements SunFontAccessor {
         @Override
         public String toString() {
             //            return "Font[" + font2D.toString() + " weight=" + font2D.getWeight() + "]";
-            return "Font[family=" + font.getFamily() + " name=" + font.getName() + " style=" + font2D.getStyle() + " weight=" + font2D.getWeight() + "]";
+            return "Font[family=" + font.getFamily() + " name=" + font.getName() + " style=" + font2D.getStyle() + " weight=" + getFontWeight(font2D) + "]";
         }
     }
 
     @Override
     public int getFontWeight(@NotNull Font font) {
-        return FontAccess.getFontAccess().getFont2D(font).getWeight();
+        Font2D font2D = FontAccess.getFontAccess().getFont2D(font);
+        return getFontWeight(font2D);
     }
 
     @Override
     public boolean isFontItalic(@NotNull Font font) {
-        int style = FontAccess.getFontAccess().getFont2D(font).getStyle();
+        Font2D font2D = FontAccess.getFontAccess().getFont2D(font);
+        int style = font2D.getStyle();
         return style == 2 || style == 3;
+    }
+
+    private static int getFontWeight(@NotNull Font2D font2D) {
+        // CompositeFonts do not propagate the weight of their
+        // slot fonts, not even the primary slot font, which
+        // makes every CompositeFont either 400 or 700 in weight.
+        if (font2D instanceof CompositeFont) {
+            CompositeFont compositeFont = (CompositeFont) font2D;
+
+            return getFontWeight(compositeFont.getSlotFont(0));
+        }
+        return font2D.getWeight();
     }
 }
